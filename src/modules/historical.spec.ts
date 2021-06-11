@@ -37,4 +37,25 @@ describe("historical", () => {
       expect(options.period2).toBe(Math.floor(now.getTime() / 1000));
     });
   });
+
+  describe("edge cases", () => {
+    // #208:
+    it("strips all-null rows", async () => {
+      const createHistoricalPromise = () =>
+        yf.historical("EURGBP=X", {
+          period1: 1567728000,
+          period2: 1570665600,
+        });
+
+      await expect(createHistoricalPromise()).resolves.toBeDefined();
+
+      const result = await createHistoricalPromise();
+
+      // Without stripping, it's about 25 rows.
+      expect(result.length).toBe(5);
+
+      // No need to really check there are no nulls in the data, as
+      // validation handles that for us automatically.
+    });
+  });
 });
