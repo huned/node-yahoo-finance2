@@ -4,6 +4,7 @@ import historical from "./historical.js";
 import { testSymbols } from "../../tests/symbols.js";
 
 import testYf from "../../tests/testYf.js";
+import { consoleSilent, consoleRestore } from "../../tests/console.js";
 
 const yf = testYf({ historical });
 
@@ -38,14 +39,18 @@ describe("historical", () => {
     });
   });
 
-  describe("edge cases", () => {
-    // #208:
+  // #208
+  describe("null values", () => {
     it("strips all-null rows", async () => {
       const createHistoricalPromise = () =>
-        yf.historical("EURGBP=X", {
-          period1: 1567728000,
-          period2: 1570665600,
-        });
+        yf.historical(
+          "EURGBP=X",
+          {
+            period1: 1567728000,
+            period2: 1570665600,
+          },
+          { devel: "historical-EURGBP-nulls.json" }
+        );
 
       await expect(createHistoricalPromise()).resolves.toBeDefined();
 
@@ -56,6 +61,19 @@ describe("historical", () => {
 
       // No need to really check there are no nulls in the data, as
       // validation handles that for us automatically.
+    });
+
+    it("throws on a row with some nulls", () => {
+      consoleSilent();
+      return expect(
+        yf
+          .historical(
+            "EURGBP=X",
+            { period1: 1567728000, period2: 1570665600 },
+            { devel: "historical-EURGBP-nulls.fake.json" }
+          )
+          .finally(consoleRestore)
+      ).rejects.toThrow("SOME (but not all) null values");
     });
   });
 });
